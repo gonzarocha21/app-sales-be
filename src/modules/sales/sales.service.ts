@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { PAYMENT_METHODS, PaymentMethod, Sale, SaleItem, StockMovement } from "../../models";
+import { PaymentMethod, Sale, SaleItem } from "../../models";
 import { AppError } from "../../utils/AppError";
 import { stockLotsService } from "../stock-lots/stockLots.service";
 import { stockMovementsService } from "../stock-movements/stockMovements.service";
@@ -30,8 +30,10 @@ type CreateSalePayload = {
 };
 
 type CreateSaleResult = {
-  sale: Sale;
-  movements: StockMovement[];
+  sale: {
+    id: string;
+    totalAmount: number;
+  };
 };
 
 type UpdateSalePayload = Partial<Omit<Sale, "id">>;
@@ -60,8 +62,8 @@ const validateItems = (items: unknown): SaleItem[] => {
       throw new AppError("Each sale item quantity must be greater than zero", 400);
     }
 
-    if (item.unitPrice !== undefined && (typeof item.unitPrice !== "number" || item.unitPrice < 0)) {
-      throw new AppError("Sale item unitPrice must be a positive number", 400);
+    if (typeof item.unitPrice !== "number" || item.unitPrice < 0) {
+      throw new AppError("Each sale item unitPrice must be a positive number", 400);
     }
   });
 
@@ -79,9 +81,11 @@ const calculateTotal = (items: SaleItem[]) => {
   return items.reduce((total, item) => total + (item.unitPrice ?? 0) * item.quantity, 0);
 };
 
+const acceptedPaymentMethods: PaymentMethod[] = ["cash", "card", "other"];
+
 const validatePaymentMethod = (paymentMethod: unknown) => {
-  if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod as PaymentMethod)) {
-    throw new AppError("Payment method must be cash, card, bank_transfer or other", 400);
+  if (!paymentMethod || !acceptedPaymentMethods.includes(paymentMethod as PaymentMethod)) {
+    throw new AppError("Payment method must be cash, card or other", 400);
   }
 };
 
@@ -106,10 +110,10 @@ export const salesService = {
       }
     });
 
-    const movements = items.map((item) => {
+    items.forEach((item) => {
       stockLotsService.decrease(item.productId, payload.locationId as string, item.quantity);
 
-      return stockMovementsService.create({
+      stockMovementsService.create({
         productId: item.productId,
         fromLocationId: payload.locationId,
         quantity: item.quantity,
@@ -131,8 +135,10 @@ export const salesService = {
     sales.push(sale);
 
     return {
-      sale,
-      movements
+      sale: {
+        id: sale.id,
+        totalAmount: sale.total
+      }
     };
   },
 

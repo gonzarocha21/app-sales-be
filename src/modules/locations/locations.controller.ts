@@ -12,7 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    sendSuccess(res, locationsService.create(req.body), "Location created", 201);
+    sendSuccess(res, locationsService.create(req.body), "Location created successfully", 201);
   } catch (error) {
     next(error);
   }

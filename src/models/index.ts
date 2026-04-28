@@ -17,10 +17,16 @@ export type SaleStatus = "registered" | "returned" | "cancelled";
 export interface Product {
   id: string;
   name: string;
-  sku: string;
-  categoryId?: string;
-  price: number;
+  internalCode: string;
+  barcode: string;
+  category: string;
+  salePrice: number;
+  cost: number;
+  description: string;
+  imageUrl: string;
   status: ProductStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Location {

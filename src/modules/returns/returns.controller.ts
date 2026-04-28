@@ -12,7 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    sendSuccess(res, returnsService.create(req.body), "Return registered", 201);
+    sendSuccess(res, returnsService.create(req.body), undefined, 201);
   } catch (error) {
     next(error);
   }

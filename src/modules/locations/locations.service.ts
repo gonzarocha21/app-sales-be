@@ -5,13 +5,25 @@ import { AppError } from "../../utils/AppError";
 const locations: Location[] = [
   {
     id: "location-1",
-    name: "Main Warehouse",
+    name: "Depósito",
     type: "warehouse",
+    active: true
+  },
+  {
+    id: "location-2",
+    name: "Local 1",
+    type: "store",
+    active: true
+  },
+  {
+    id: "location-3",
+    name: "Local 2",
+    type: "store",
     active: true
   }
 ];
 
-type CreateLocationPayload = Pick<Location, "name" | "type"> & Partial<Pick<Location, "active">>;
+type CreateLocationPayload = Pick<Location, "name" | "type">;
 type UpdateLocationPayload = Partial<Omit<Location, "id">>;
 
 const findActiveLocation = (id: string) => {
@@ -36,10 +48,17 @@ const validateCreatePayload = (payload: Partial<CreateLocationPayload>) => {
   }
 
   validateLocationType(payload.type);
+
+  const normalizedName = payload.name.trim().toLowerCase();
+  const locationWithSameName = locations.find((location) => location.name.trim().toLowerCase() === normalizedName);
+
+  if (locationWithSameName) {
+    throw new AppError("Location with this name already exists", 400, "DUPLICATE_LOCATION");
+  }
 };
 
 export const locationsService = {
-  list: () => locations.filter((location) => location.active),
+  list: () => locations,
 
   create: (payload: Partial<CreateLocationPayload>): Location => {
     validateCreatePayload(payload);
@@ -49,7 +68,7 @@ export const locationsService = {
       id: randomUUID(),
       name: validPayload.name,
       type: validPayload.type,
-      active: validPayload.active ?? true
+      active: true
     };
 
     locations.push(location);

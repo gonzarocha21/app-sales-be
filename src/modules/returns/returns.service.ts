@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { SaleItem, StockMovement } from "../../models";
+import { StockMovement } from "../../models";
 import { AppError } from "../../utils/AppError";
 import { stockLotsService } from "../stock-lots/stockLots.service";
 import { stockMovementsService } from "../stock-movements/stockMovements.service";
@@ -8,77 +8,66 @@ type ReturnRecord = {
   id: string;
   externalReference?: string;
   saleId?: string;
+  productId: string;
+  quantity: number;
   locationId: string;
-  items: SaleItem[];
   createdAt: string;
 };
 
 type CreateReturnPayload = {
-  externalReference?: string;
-  saleId?: string;
+  productId?: string;
+  quantity?: number;
   locationId?: string;
-  items?: SaleItem[];
 };
 
 type CreateReturnResult = {
-  return: ReturnRecord;
-  movements: StockMovement[];
+  movement: Pick<StockMovement, "type">;
 };
 
 const returns: ReturnRecord[] = [];
 
-const validateItems = (items: unknown): SaleItem[] => {
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new AppError("Return items are required", 400);
+const validatePayload = (payload: CreateReturnPayload) => {
+  if (!payload.productId || !payload.locationId || payload.quantity === undefined) {
+    throw new AppError("productId, quantity and locationId are required", 400);
   }
 
-  items.forEach((item) => {
-    if (!item.productId) {
-      throw new AppError("Each return item must include productId", 400);
-    }
-
-    if (typeof item.quantity !== "number" || item.quantity <= 0) {
-      throw new AppError("Each return item quantity must be greater than zero", 400);
-    }
-  });
-
-  return items as SaleItem[];
+  if (typeof payload.quantity !== "number" || payload.quantity <= 0) {
+    throw new AppError("Return quantity must be greater than zero", 400);
+  }
 };
 
 export const returnsService = {
   list: () => returns,
 
   create: (payload: CreateReturnPayload): CreateReturnResult => {
-    if (!payload.locationId) {
-      throw new AppError("Return locationId is required", 400);
-    }
+    validatePayload(payload);
 
-    const items = validateItems(payload.items);
-    const movements = items.map((item) => {
-      stockLotsService.increase(item.productId, payload.locationId as string, item.quantity);
+    const productId = payload.productId as string;
+    const locationId = payload.locationId as string;
+    const quantity = payload.quantity as number;
 
-      return stockMovementsService.create({
-        productId: item.productId,
-        toLocationId: payload.locationId,
-        quantity: item.quantity,
-        type: "return"
-      });
+    stockLotsService.increase(productId, locationId, quantity);
+    const movement = stockMovementsService.create({
+      productId,
+      toLocationId: locationId,
+      quantity,
+      type: "return"
     });
 
     const returnRecord: ReturnRecord = {
       id: randomUUID(),
-      externalReference: payload.externalReference,
-      saleId: payload.saleId,
-      locationId: payload.locationId,
-      items,
+      productId,
+      quantity,
+      locationId,
       createdAt: new Date().toISOString()
     };
 
     returns.push(returnRecord);
 
     return {
-      return: returnRecord,
-      movements
+      movement: {
+        type: movement.type
+      }
     };
   }
 };

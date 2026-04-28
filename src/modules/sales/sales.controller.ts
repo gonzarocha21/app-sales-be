@@ -12,7 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    sendSuccess(res, salesService.create(req.body), "Sale registered", 201);
+    sendSuccess(res, salesService.create(req.body), undefined, 201);
   } catch (error) {
     next(error);
   }

@@ -4,7 +4,7 @@ import { productsService } from "./products.service";
 
 const list: RequestHandler = (_req, res, next) => {
   try {
-    sendSuccess(res, productsService.list());
+    sendSuccess(res, productsService.list(_req.query));
   } catch (error) {
     next(error);
   }
@@ -12,7 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    sendSuccess(res, productsService.create(req.body), "Product created", 201);
+    sendSuccess(res, productsService.create(req.body), "Product created successfully", 201);
   } catch (error) {
     next(error);
   }
@@ -28,7 +28,7 @@ const getById: RequestHandler = (req, res, next) => {
 
 const update: RequestHandler = (req, res, next) => {
   try {
-    sendSuccess(res, productsService.update(req.params.id, req.body), "Product updated");
+    sendSuccess(res, productsService.update(req.params.id, req.body), "Product updated successfully");
   } catch (error) {
     next(error);
   }
@@ -36,7 +36,16 @@ const update: RequestHandler = (req, res, next) => {
 
 const remove: RequestHandler = (req, res, next) => {
   try {
-    sendSuccess(res, productsService.remove(req.params.id), "Product deleted");
+    const product = productsService.remove(req.params.id);
+
+    sendSuccess(
+      res,
+      {
+        id: product.id,
+        status: product.status
+      },
+      "Product deactivated successfully"
+    );
   } catch (error) {
     next(error);
   }

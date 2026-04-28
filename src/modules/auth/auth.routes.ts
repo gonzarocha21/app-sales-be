@@ -1,4 +1,8 @@
-import { createCrudRouter } from "../../utils/createCrudRouter";
+import { Router } from "express";
 import { authController } from "./auth.controller";
 
-export const authRouter = createCrudRouter(authController);
+const authRouter = Router();
+
+authRouter.post("/login", authController.login);
+
+export { authRouter };
