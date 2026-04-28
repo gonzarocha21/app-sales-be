@@ -1,11 +1,10 @@
 import { RequestHandler } from "express";
+import { sendSuccess } from "../../utils/apiResponse";
 import { locationsService } from "./locations.service";
 
 const list: RequestHandler = (_req, res, next) => {
   try {
-    res.json({
-      data: locationsService.list()
-    });
+    sendSuccess(res, locationsService.list());
   } catch (error) {
     next(error);
   }
@@ -13,10 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    res.status(201).json({
-      message: "Location created",
-      data: locationsService.create(req.body)
-    });
+    sendSuccess(res, locationsService.create(req.body), "Location created", 201);
   } catch (error) {
     next(error);
   }
@@ -24,9 +20,7 @@ const create: RequestHandler = (req, res, next) => {
 
 const getById: RequestHandler = (req, res, next) => {
   try {
-    res.json({
-      data: locationsService.getById(req.params.id)
-    });
+    sendSuccess(res, locationsService.getById(req.params.id));
   } catch (error) {
     next(error);
   }
@@ -34,10 +28,7 @@ const getById: RequestHandler = (req, res, next) => {
 
 const update: RequestHandler = (req, res, next) => {
   try {
-    res.json({
-      message: "Location updated",
-      data: locationsService.update(req.params.id, req.body)
-    });
+    sendSuccess(res, locationsService.update(req.params.id, req.body), "Location updated");
   } catch (error) {
     next(error);
   }
@@ -45,10 +36,7 @@ const update: RequestHandler = (req, res, next) => {
 
 const remove: RequestHandler = (req, res, next) => {
   try {
-    res.json({
-      message: "Location deleted",
-      data: locationsService.remove(req.params.id)
-    });
+    sendSuccess(res, locationsService.remove(req.params.id), "Location deleted");
   } catch (error) {
     next(error);
   }

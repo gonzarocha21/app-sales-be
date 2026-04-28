@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { Sale, SaleItem, StockMovement } from "../../models";
+import { PAYMENT_METHODS, PaymentMethod, Sale, SaleItem, StockMovement } from "../../models";
 import { AppError } from "../../utils/AppError";
 import { stockLotsService } from "../stock-lots/stockLots.service";
 import { stockMovementsService } from "../stock-movements/stockMovements.service";
@@ -25,6 +25,7 @@ const sales: Sale[] = [
 type CreateSalePayload = {
   externalReference?: string;
   locationId?: string;
+  paymentMethod?: PaymentMethod;
   items?: SaleItem[];
 };
 
@@ -78,6 +79,12 @@ const calculateTotal = (items: SaleItem[]) => {
   return items.reduce((total, item) => total + (item.unitPrice ?? 0) * item.quantity, 0);
 };
 
+const validatePaymentMethod = (paymentMethod: unknown) => {
+  if (paymentMethod && !PAYMENT_METHODS.includes(paymentMethod as PaymentMethod)) {
+    throw new AppError("Payment method must be cash, card, bank_transfer or other", 400);
+  }
+};
+
 export const salesService = {
   list: () => sales,
 
@@ -85,6 +92,8 @@ export const salesService = {
     if (!payload.locationId) {
       throw new AppError("Sale locationId is required", 400);
     }
+
+    validatePaymentMethod(payload.paymentMethod);
 
     const items = validateItems(payload.items);
     const requiredQuantityByProduct = getRequiredQuantityByProduct(items);
@@ -104,7 +113,7 @@ export const salesService = {
         productId: item.productId,
         fromLocationId: payload.locationId,
         quantity: item.quantity,
-        type: "out"
+        type: "sale"
       });
     });
 
@@ -114,6 +123,7 @@ export const salesService = {
       locationId: payload.locationId,
       items,
       status: "registered",
+      paymentMethod: payload.paymentMethod,
       total: calculateTotal(items),
       createdAt: new Date().toISOString()
     };

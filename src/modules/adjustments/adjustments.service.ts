@@ -60,7 +60,7 @@ export const adjustmentsService = {
             fromLocationId: difference < 0 ? locationId : undefined,
             toLocationId: difference > 0 ? locationId : undefined,
             quantity: movementQuantity,
-            type: "adjustment"
+            type: "manual_adjustment"
           })
         : null;
 

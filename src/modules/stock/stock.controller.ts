@@ -1,12 +1,10 @@
 import { RequestHandler } from "express";
+import { sendSuccess } from "../../utils/apiResponse";
 import { stockService } from "./stock.service";
 
 const transfer: RequestHandler = (req, res, next) => {
   try {
-    res.status(201).json({
-      message: "Stock transferred",
-      data: stockService.transfer(req.body)
-    });
+    sendSuccess(res, stockService.transfer(req.body), "Stock transferred", 201);
   } catch (error) {
     next(error);
   }

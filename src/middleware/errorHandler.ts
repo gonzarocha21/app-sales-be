@@ -6,8 +6,13 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
 
   const statusCode = error instanceof AppError ? error.statusCode : 500;
   const message = error instanceof AppError ? error.message : "Internal server error";
+  const code = error instanceof AppError ? error.code : "INTERNAL_SERVER_ERROR";
 
   res.status(statusCode).json({
-    message
+    success: false,
+    error: {
+      code,
+      message
+    }
   });
 };

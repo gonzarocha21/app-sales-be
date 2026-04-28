@@ -1,11 +1,10 @@
 import { RequestHandler } from "express";
+import { sendSuccess } from "../../utils/apiResponse";
 import { returnsService } from "./returns.service";
 
 const list: RequestHandler = (_req, res, next) => {
   try {
-    res.json({
-      data: returnsService.list()
-    });
+    sendSuccess(res, returnsService.list());
   } catch (error) {
     next(error);
   }
@@ -13,10 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    res.status(201).json({
-      message: "Return registered",
-      data: returnsService.create(req.body)
-    });
+    sendSuccess(res, returnsService.create(req.body), "Return registered", 201);
   } catch (error) {
     next(error);
   }

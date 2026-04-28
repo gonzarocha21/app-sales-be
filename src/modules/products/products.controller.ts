@@ -1,11 +1,10 @@
 import { RequestHandler } from "express";
+import { sendSuccess } from "../../utils/apiResponse";
 import { productsService } from "./products.service";
 
 const list: RequestHandler = (_req, res, next) => {
   try {
-    res.json({
-      data: productsService.list()
-    });
+    sendSuccess(res, productsService.list());
   } catch (error) {
     next(error);
   }
@@ -13,10 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const create: RequestHandler = (req, res, next) => {
   try {
-    res.status(201).json({
-      message: "Product created",
-      data: productsService.create(req.body)
-    });
+    sendSuccess(res, productsService.create(req.body), "Product created", 201);
   } catch (error) {
     next(error);
   }
@@ -24,9 +20,7 @@ const create: RequestHandler = (req, res, next) => {
 
 const getById: RequestHandler = (req, res, next) => {
   try {
-    res.json({
-      data: productsService.getById(req.params.id)
-    });
+    sendSuccess(res, productsService.getById(req.params.id));
   } catch (error) {
     next(error);
   }
@@ -34,10 +28,7 @@ const getById: RequestHandler = (req, res, next) => {
 
 const update: RequestHandler = (req, res, next) => {
   try {
-    res.json({
-      message: "Product updated",
-      data: productsService.update(req.params.id, req.body)
-    });
+    sendSuccess(res, productsService.update(req.params.id, req.body), "Product updated");
   } catch (error) {
     next(error);
   }
@@ -45,10 +36,7 @@ const update: RequestHandler = (req, res, next) => {
 
 const remove: RequestHandler = (req, res, next) => {
   try {
-    res.json({
-      message: "Product deleted",
-      data: productsService.remove(req.params.id)
-    });
+    sendSuccess(res, productsService.remove(req.params.id), "Product deleted");
   } catch (error) {
     next(error);
   }

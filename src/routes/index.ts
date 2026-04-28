@@ -13,8 +13,13 @@ import { stockRouter } from "../modules/stock/stock.routes";
 import { stockLotsRouter } from "../modules/stock-lots/stockLots.routes";
 import { stockMovementsRouter } from "../modules/stock-movements/stockMovements.routes";
 import { usersRouter } from "../modules/users/users.routes";
+import { sendSuccess } from "../utils/apiResponse";
 
 const apiRouter = Router();
+
+apiRouter.get("/health", (_req, res) => {
+  sendSuccess(res, { status: "ok" });
+});
 
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", usersRouter);

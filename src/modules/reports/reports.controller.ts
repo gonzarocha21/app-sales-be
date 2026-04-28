@@ -1,11 +1,10 @@
 import { RequestHandler } from "express";
+import { sendSuccess } from "../../utils/apiResponse";
 import { reportsService } from "./reports.service";
 
 const list: RequestHandler = (_req, res, next) => {
   try {
-    res.json({
-      data: reportsService.list()
-    });
+    sendSuccess(res, reportsService.list());
   } catch (error) {
     next(error);
   }
@@ -13,9 +12,7 @@ const list: RequestHandler = (_req, res, next) => {
 
 const stock: RequestHandler = (_req, res, next) => {
   try {
-    res.json({
-      data: reportsService.getStockReport()
-    });
+    sendSuccess(res, reportsService.getStockReport());
   } catch (error) {
     next(error);
   }
@@ -25,9 +22,7 @@ const lowStock: RequestHandler = (req, res, next) => {
   try {
     const threshold = req.query.threshold === undefined ? undefined : Number(req.query.threshold);
 
-    res.json({
-      data: reportsService.getLowStockReport(threshold)
-    });
+    sendSuccess(res, reportsService.getLowStockReport(threshold));
   } catch (error) {
     next(error);
   }
@@ -35,9 +30,7 @@ const lowStock: RequestHandler = (req, res, next) => {
 
 const sales: RequestHandler = (_req, res, next) => {
   try {
-    res.json({
-      data: reportsService.getSalesReport()
-    });
+    sendSuccess(res, reportsService.getSalesReport());
   } catch (error) {
     next(error);
   }

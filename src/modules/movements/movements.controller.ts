@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import { sendSuccess } from "../../utils/apiResponse";
 import { StockMovementFilters } from "../stock-movements/stockMovements.service";
 import { stockMovementsService } from "../stock-movements/stockMovements.service";
 
@@ -14,9 +15,7 @@ const list: RequestHandler = (req, res, next) => {
       dateTo: req.query.dateTo as string | undefined
     };
 
-    res.json({
-      data: stockMovementsService.list(filters)
-    });
+    sendSuccess(res, stockMovementsService.list(filters));
   } catch (error) {
     next(error);
   }

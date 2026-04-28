@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { StockMovement, StockMovementType } from "../../models";
+import { MOVEMENT_TYPES, MovementType, StockMovement } from "../../models";
 import { AppError } from "../../utils/AppError";
 
 const stockMovements: StockMovement[] = [
@@ -8,7 +8,7 @@ const stockMovements: StockMovement[] = [
     productId: "product-1",
     toLocationId: "location-1",
     quantity: 10,
-    type: "in",
+    type: "entry",
     createdAt: "2026-04-27T00:00:00.000Z"
   }
 ];
@@ -20,7 +20,7 @@ export type StockMovementFilters = {
   locationId?: string;
   fromLocationId?: string;
   toLocationId?: string;
-  type?: StockMovementType;
+  type?: MovementType;
   dateFrom?: string;
   dateTo?: string;
 };
@@ -41,8 +41,6 @@ const validateQuantity = (quantity: unknown) => {
   }
 };
 
-const movementTypes: StockMovementType[] = ["in", "out", "transfer", "adjustment", "return", "removal"];
-
 const validateDate = (date: string, fieldName: string) => {
   if (Number.isNaN(Date.parse(date))) {
     throw new AppError(`${fieldName} must be a valid date`, 400);
@@ -51,7 +49,7 @@ const validateDate = (date: string, fieldName: string) => {
 
 export const stockMovementsService = {
   list: (filters: StockMovementFilters = {}) => {
-    if (filters.type && !movementTypes.includes(filters.type)) {
+    if (filters.type && !MOVEMENT_TYPES.includes(filters.type)) {
       throw new AppError("Invalid stock movement type", 400);
     }
 

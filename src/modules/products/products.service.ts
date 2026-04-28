@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { Product } from "../../models";
+import { PRODUCT_STATUSES, Product } from "../../models";
 import { AppError } from "../../utils/AppError";
 
 const products: Product[] = [
@@ -9,15 +9,15 @@ const products: Product[] = [
     sku: "SKU-001",
     categoryId: "category-1",
     price: 100,
-    active: true
+    status: "active"
   }
 ];
 
-type CreateProductPayload = Pick<Product, "name" | "sku" | "price"> & Partial<Pick<Product, "categoryId" | "active">>;
+type CreateProductPayload = Pick<Product, "name" | "sku" | "price"> & Partial<Pick<Product, "categoryId" | "status">>;
 type UpdateProductPayload = Partial<Omit<Product, "id">>;
 
 const findActiveProduct = (id: string) => {
-  const product = products.find((item) => item.id === id && item.active);
+  const product = products.find((item) => item.id === id && item.status === "active");
 
   if (!product) {
     throw new AppError("Product not found", 404);
@@ -34,10 +34,14 @@ const validateCreatePayload = (payload: Partial<CreateProductPayload>) => {
   if (typeof payload.price !== "number" || payload.price < 0) {
     throw new AppError("Product price must be a positive number", 400);
   }
+
+  if (payload.status && !PRODUCT_STATUSES.includes(payload.status)) {
+    throw new AppError("Product status must be active or inactive", 400);
+  }
 };
 
 export const productsService = {
-  list: () => products.filter((product) => product.active),
+  list: () => products.filter((product) => product.status === "active"),
 
   create: (payload: Partial<CreateProductPayload>): Product => {
     validateCreatePayload(payload);
@@ -49,7 +53,7 @@ export const productsService = {
       sku: validPayload.sku,
       categoryId: validPayload.categoryId,
       price: validPayload.price,
-      active: validPayload.active ?? true
+      status: validPayload.status ?? "active"
     };
 
     products.push(product);
@@ -66,6 +70,10 @@ export const productsService = {
       throw new AppError("Product price must be a positive number", 400);
     }
 
+    if (payload.status && !PRODUCT_STATUSES.includes(payload.status)) {
+      throw new AppError("Product status must be active or inactive", 400);
+    }
+
     Object.assign(product, payload, { id });
 
     return product;
@@ -74,7 +82,7 @@ export const productsService = {
   remove: (id: string): Product => {
     const product = findActiveProduct(id);
 
-    product.active = false;
+    product.status = "inactive";
 
     return product;
   }

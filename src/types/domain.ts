@@ -1,13 +1,23 @@
 export type {
   Location,
+  LOCATION_TYPES,
   LocationType,
+  MovementType,
+  MOVEMENT_TYPES,
+  PAYMENT_METHODS,
+  PaymentMethod,
   Product,
+  PRODUCT_STATUSES,
+  ProductStatus,
+  REMOVAL_REASONS,
+  RemovalReason,
   Sale,
   SaleItem,
   SaleStatus,
   StockLot,
   StockMovement,
   StockMovementType,
+  USER_ROLES,
   User,
   UserRole
 } from "../models";

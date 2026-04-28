@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { Location, LocationType } from "../../models";
+import { LOCATION_TYPES, Location, LocationType } from "../../models";
 import { AppError } from "../../utils/AppError";
 
 const locations: Location[] = [
@@ -14,8 +14,6 @@ const locations: Location[] = [
 type CreateLocationPayload = Pick<Location, "name" | "type"> & Partial<Pick<Location, "active">>;
 type UpdateLocationPayload = Partial<Omit<Location, "id">>;
 
-const locationTypes: LocationType[] = ["warehouse", "store"];
-
 const findActiveLocation = (id: string) => {
   const location = locations.find((item) => item.id === id && item.active);
 
@@ -27,7 +25,7 @@ const findActiveLocation = (id: string) => {
 };
 
 const validateLocationType = (type: unknown) => {
-  if (!locationTypes.includes(type as LocationType)) {
+  if (!LOCATION_TYPES.includes(type as LocationType)) {
     throw new AppError("Location type must be warehouse or store", 400);
   }
 };
