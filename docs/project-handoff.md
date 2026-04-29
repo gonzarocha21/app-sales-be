@@ -1,8 +1,52 @@
 # Inventory Management MVP Backend Handoff
 
-Last updated: 2026-04-28
+Last updated: 2026-04-29
 
 This document summarizes the current backend state for future developers and AI assistants. It is meant to preserve context when the chat history gets long or compacted.
+
+## Fast Resume Checklist
+
+If this conversation context was reset, start here:
+
+1. Confirm repo and branch:
+
+   ```bash
+   pwd
+   git status -sb
+   git log --oneline -5
+   ```
+
+2. Run the backend build:
+
+   ```bash
+   npm run build
+   ```
+
+3. Remember the API base URL:
+
+   ```text
+   http://localhost:3000/api
+   ```
+
+4. Product endpoints are the most actively changing area. Read these files first if the next task mentions products:
+
+   ```text
+   src/models/index.ts
+   src/modules/products/products.storage.ts
+   src/modules/products/products.service.ts
+   src/modules/products/products.controller.ts
+   src/modules/products/products.routes.ts
+   ```
+
+5. Current frontend sibling repo:
+
+   ```text
+   ../app-ventas-fe
+   ```
+
+6. Backend response format is standardized. Use `sendSuccess` and `AppError`; do not hand-roll `res.json` payloads in new controllers.
+
+7. Storage is still in memory. Do not add database persistence unless explicitly requested.
 
 ## Project Overview
 
@@ -209,7 +253,7 @@ This means:
 Important service stores:
 
 ```text
-productsService       src/modules/products/products.service.ts
+productsStorage       src/modules/products/products.storage.ts
 locationsService      src/modules/locations/locations.service.ts
 stockLotsService      src/modules/stock-lots/stockLots.service.ts
 stockMovementsService src/modules/stock-movements/stockMovements.service.ts
@@ -293,10 +337,11 @@ DELETE /api/products/:id
   "category": "string",
   "salePrice": 10,
   "cost": 5,
-  "description": "string",
-  "imageUrl": "string"
+  "description": "string"
 }
 ```
+
+`imageUrl` may also be provided, but it is no longer required. If omitted, the backend stores and returns an empty string.
 
 Created product response data:
 
@@ -311,19 +356,38 @@ Created product response data:
   "cost": 5,
   "description": "string",
   "imageUrl": "string",
-  "status": "active"
+  "status": "active",
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
-`GET /api/products` returns product summaries, not full product records:
+Product storage is separated from the service:
+
+```text
+src/modules/products/products.storage.ts
+```
+
+Seeded products:
+
+- `product-1`: Remera Básica Blanca
+- `product-2`: Jean Azul
+- `product-3`: Botella Térmica
+
+`GET /api/products` returns product list DTOs with stock fields:
 
 ```json
 {
   "id": "string",
   "name": "string",
+  "internalCode": "string",
   "barcode": "string",
   "category": "string",
   "salePrice": 10,
+  "cost": 5,
+  "description": "string",
+  "imageUrl": "string",
+  "status": "active",
   "totalStock": 25,
   "stockByLocation": [
     {
@@ -331,7 +395,9 @@ Created product response data:
       "locationName": "string",
       "quantity": 25
     }
-  ]
+  ],
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
@@ -348,15 +414,92 @@ Supported query params:
 Supported `sortBy`:
 
 - `name`
+- `internalCode`
 - `barcode`
 - `category`
-- `salePrice`
 - `totalStock`
+- `salePrice`
+- `cost`
+- `createdAt`
+- `status`
 
 Supported `sortOrder`:
 
 - `asc`
 - `desc`
+
+Default sort:
+
+```text
+name asc
+```
+
+Search behavior:
+
+- case-insensitive
+- matches product `name`
+- matches product `id`
+- matches `internalCode`
+- matches `barcode`
+
+`GET /api/products/:id` returns a product detail DTO:
+
+```json
+{
+  "id": "string",
+  "name": "string",
+  "internalCode": "string",
+  "barcode": "string",
+  "category": "string",
+  "salePrice": 10,
+  "cost": 5,
+  "description": "string",
+  "imageUrl": "string",
+  "status": "active",
+  "totalStock": 25,
+  "stockByLocation": [
+    {
+      "locationId": "location-1",
+      "locationName": "Depósito",
+      "quantity": 25
+    }
+  ],
+  "stockLots": [
+    {
+      "id": "stock-lot-1",
+      "locationId": "location-1",
+      "locationName": "Depósito",
+      "quantity": 25,
+      "expirationDate": "2026-12-31"
+    }
+  ],
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+```
+
+`PUT /api/products/:id` requires the full product payload:
+
+```json
+{
+  "name": "string",
+  "internalCode": "string",
+  "barcode": "string",
+  "category": "string",
+  "salePrice": 10,
+  "cost": 5,
+  "description": "string",
+  "status": "active"
+}
+```
+
+`imageUrl` is optional on update too. If omitted, it becomes an empty string.
+
+Update response message:
+
+```text
+Product updated successfully
+```
 
 Soft delete:
 
@@ -364,7 +507,20 @@ Soft delete:
 DELETE /api/products/:id
 ```
 
-sets product `status` to `inactive`.
+sets product `status` to `inactive`, updates `updatedAt`, preserves the product record, and returns:
+
+```json
+{
+  "id": "string",
+  "status": "inactive"
+}
+```
+
+Delete response message:
+
+```text
+Product deactivated successfully
+```
 
 ### Locations
 
@@ -776,7 +932,7 @@ These are important for future AI developers:
 
 6. Notes are accepted by some endpoints but not modeled consistently yet.
 
-7. Product list returns summary DTOs, not full product records.
+7. Product list returns list DTOs that include product fields plus stock aggregates. Product detail additionally includes `stockLots`.
 
 8. Product detail returns the full stored product.
 
@@ -970,15 +1126,13 @@ Branch:
 main
 ```
 
-There are currently uncommitted changes after the last commit, including:
+Latest known pushed backend commit during this handoff:
 
-- API contract updates
-- auth login endpoint
-- product contract updates
-- stock entry/transfer contract updates
-- sales/returns contract updates
-- location seed and validation updates
-- this documentation
+```text
+2a64014 Support product table sorting fields
+```
+
+At the time this document was refreshed, `main` was synced with `origin/main` before editing this doc.
 
 Run this before committing:
 
@@ -986,4 +1140,3 @@ Run this before committing:
 npm run build
 git status --short
 ```
-
