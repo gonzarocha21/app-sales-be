@@ -26,7 +26,7 @@ const products: Product[] = [
     salePrice: 180,
     cost: 95,
     description: "Jean azul clásico.",
-    imageUrl: "https://example.com/jean-azul.jpg",
+    imageUrl: "https://lsco.scene7.com/is/image/lsco/295020228-alt2-pdp-lse",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt
