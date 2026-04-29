@@ -234,15 +234,18 @@ export const productsService = {
     const sortBy = (filters.sortBy ?? "name") as keyof ProductListItem;
     const sortableFields: Array<keyof ProductListItem> = [
       "name",
+      "internalCode",
+      "barcode",
       "category",
       "totalStock",
       "salePrice",
       "cost",
-      "createdAt"
+      "createdAt",
+      "status"
     ];
 
     if (!sortableFields.includes(sortBy)) {
-      throw new AppError("sortBy must be name, category, totalStock, salePrice, cost or createdAt", 400);
+      throw new AppError("sortBy must be name, internalCode, barcode, category, totalStock, salePrice, cost, createdAt or status", 400);
     }
 
     listItems.sort((firstItem, secondItem) => {
