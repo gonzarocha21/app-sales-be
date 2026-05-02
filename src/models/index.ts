@@ -4,6 +4,7 @@ export const PRODUCT_STATUSES = ["active", "inactive"] as const;
 export const MOVEMENT_TYPES = ["entry", "transfer", "sale", "return", "removal", "manual_adjustment"] as const;
 export const REMOVAL_REASONS = ["expired", "broken", "lost", "internal_consumption", "loading_error", "other"] as const;
 export const PAYMENT_METHODS = ["cash", "card", "bank_transfer", "other"] as const;
+export const LANGUAGES = ["en", "es"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 export type LocationType = (typeof LOCATION_TYPES)[number];
@@ -13,6 +14,12 @@ export type StockMovementType = MovementType;
 export type RemovalReason = (typeof REMOVAL_REASONS)[number];
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export type SaleStatus = "registered" | "returned" | "cancelled";
+export type Language = (typeof LANGUAGES)[number];
+
+export interface AppSettings {
+  lowStockThreshold: number;
+  language: Language;
+}
 
 export interface Product {
   id: string;

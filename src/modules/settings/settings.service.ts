@@ -1,32 +1,33 @@
-type Setting = {
-  id: string;
-  key: string;
-  value: string;
+import { AppSettings, LANGUAGES } from "../../models";
+import { AppError } from "../../utils/AppError";
+
+type UpdateSettingsPayload = Partial<AppSettings>;
+
+const settings: AppSettings = {
+  lowStockThreshold: 1,
+  language: "en"
 };
 
-const mockSettings: Setting[] = [
-  {
-    id: "setting-1",
-    key: "currency",
-    value: "USD"
+const validateSettingsPayload = (payload: UpdateSettingsPayload) => {
+  if (
+    payload.lowStockThreshold !== undefined &&
+    (typeof payload.lowStockThreshold !== "number" || payload.lowStockThreshold < 1)
+  ) {
+    throw new AppError("lowStockThreshold must be a number greater than or equal to 1", 400);
   }
-];
+
+  if (payload.language !== undefined && !LANGUAGES.includes(payload.language)) {
+    throw new AppError("language must be en or es", 400);
+  }
+};
 
 export const settingsService = {
-  list: () => mockSettings,
-  create: (payload: Partial<Setting>): Setting => ({
-    id: "setting-new",
-    key: payload.key ?? "setting.key",
-    value: payload.value ?? "placeholder"
-  }),
-  getById: (id: string): Setting => ({
-    ...mockSettings[0],
-    id
-  }),
-  update: (id: string, payload: Partial<Setting>): Setting => ({
-    ...mockSettings[0],
-    ...payload,
-    id
-  }),
-  remove: (id: string) => ({ id })
+  get: (): AppSettings => settings,
+
+  update: (payload: UpdateSettingsPayload): AppSettings => {
+    validateSettingsPayload(payload);
+    Object.assign(settings, payload);
+
+    return settings;
+  }
 };

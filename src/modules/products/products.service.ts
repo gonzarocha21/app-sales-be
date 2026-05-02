@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { PRODUCT_STATUSES, Product, ProductStatus } from "../../models";
 import { env } from "../../config/env";
 import { AppError } from "../../utils/AppError";
+import { PaginatedResult, paginate } from "../../utils/pagination";
 import { locationsService } from "../locations/locations.service";
 import { stockLotsService } from "../stock-lots/stockLots.service";
 import { productsStorage } from "./products.storage";
@@ -16,6 +17,8 @@ type ProductListFilters = {
   lowStock?: string;
   sortBy?: string;
   sortOrder?: string;
+  page?: string | number;
+  pageSize?: string | number;
 };
 type ProductListItem = {
   id: string;
@@ -203,7 +206,7 @@ const buildProductDetail = (product: Product): ProductDetail => {
 };
 
 export const productsService = {
-  list: (filters: ProductListFilters = {}) => {
+  list: (filters: ProductListFilters = {}): PaginatedResult<ProductListItem> => {
     const search = filters.search?.trim().toLowerCase();
     const category = filters.category?.trim().toLowerCase();
     const lowStock = getBooleanFilter(filters.lowStock);
@@ -213,21 +216,28 @@ export const productsService = {
       throw new AppError("Product status must be active or inactive", 400);
     }
 
-    const filteredProducts = productsStorage.findAll().filter((product) => {
-      const item = buildProductListItem(product);
-      const matchesSearch =
-        !search ||
+    const searchedProducts = productsStorage.findAll().filter((product) => {
+      if (!search) {
+        return true;
+      }
+
+      return (
         product.name.toLowerCase().includes(search) ||
         product.id.toLowerCase().includes(search) ||
         product.barcode.toLowerCase().includes(search) ||
-        product.internalCode.toLowerCase().includes(search);
+        product.internalCode.toLowerCase().includes(search)
+      );
+    });
+
+    const filteredProducts = searchedProducts.filter((product) => {
+      const item = buildProductListItem(product);
       const matchesCategory = !category || product.category.toLowerCase() === category;
       const matchesLocation =
         !filters.locationId || item.stockByLocation.some((stockItem) => stockItem.locationId === filters.locationId);
       const matchesStatus = !filters.status || product.status === filters.status;
       const matchesLowStock = lowStock === undefined || (item.totalStock <= env.lowStockThreshold) === lowStock;
 
-      return matchesSearch && matchesCategory && matchesLocation && matchesStatus && matchesLowStock;
+      return matchesCategory && matchesLocation && matchesStatus && matchesLowStock;
     });
     const listItems = filteredProducts.map(buildProductListItem);
 
@@ -257,7 +267,7 @@ export const productsService = {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-    return listItems;
+    return paginate(listItems, filters);
   },
 
   create: (payload: Partial<CreateProductPayload>): Product => {
