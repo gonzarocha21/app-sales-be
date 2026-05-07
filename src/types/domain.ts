@@ -3,6 +3,7 @@ export type {
   LOCATION_TYPES,
   LocationType,
   AppSettings,
+  Branding,
   LANGUAGES,
   Language,
   MovementType,

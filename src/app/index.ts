@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import path from "path";
 import { errorHandler } from "../middleware/errorHandler";
 import { notFoundHandler } from "../middleware/notFoundHandler";
 import { requestLogger } from "../middleware/requestLogger";
@@ -11,6 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/health", (_req, res) => {
   sendSuccess(res, { status: "ok" });

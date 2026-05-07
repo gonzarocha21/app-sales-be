@@ -12,7 +12,7 @@ const products: Product[] = [
     salePrice: 790,
     cost: 430,
     description: "Bombilla de alpaca con caño fino y boca ancha.",
-    imageUrl: "",
+    imageUrl: "https://alem.uy/wp-content/uploads/2025/05/BOMB-ALPACA.jpg",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt
@@ -26,7 +26,7 @@ const products: Product[] = [
     salePrice: 890,
     cost: 490,
     description: "Mate camionero de calabaza trabajado artesanalmente.",
-    imageUrl: "",
+    imageUrl: "https://alem.uy/wp-content/uploads/2024/05/20240514074750_1S5A0106.jpg",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt
@@ -40,7 +40,7 @@ const products: Product[] = [
     salePrice: 1890,
     cost: 1040,
     description: "Matera de auto en cuero con manija.",
-    imageUrl: "",
+    imageUrl: "https://alem.uy/wp-content/uploads/2023/10/ms0024.jpg",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt
@@ -54,7 +54,7 @@ const products: Product[] = [
     salePrice: 2750,
     cost: 1510,
     description: "Mate imperial de cerámica.",
-    imageUrl: "",
+    imageUrl: "https://alem.uy/wp-content/uploads/2023/09/imperial-ceramica.jpg",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt
@@ -68,7 +68,7 @@ const products: Product[] = [
     salePrice: 650,
     cost: 360,
     description: "Mate de calabaza pulido.",
-    imageUrl: "",
+    imageUrl: "https://alem.uy/wp-content/uploads/2024/05/mate3.jpg",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt
@@ -96,7 +96,7 @@ const products: Product[] = [
     salePrice: 2850,
     cost: 1570,
     description: "Mate imperial de calabaza cincelado.",
-    imageUrl: "",
+    imageUrl: "https://alem.uy/wp-content/uploads/2023/08/imp-cinc-calabaza.jpg",
     status: "active",
     createdAt: seededAt,
     updatedAt: seededAt

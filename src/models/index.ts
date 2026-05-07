@@ -21,6 +21,12 @@ export interface AppSettings {
   language: Language;
 }
 
+export interface Branding {
+  companyName: string;
+  logoUrl: string | null;
+  tagline: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -83,6 +89,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
   role: UserRole;
   active: boolean;
 }

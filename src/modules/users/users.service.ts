@@ -3,10 +3,19 @@ import { AppError } from "../../utils/AppError";
 
 const mockUsers: User[] = [
   {
-    id: "user-1",
-    name: "Admin User",
-    email: "admin@example.com",
+    id: "user-admin",
+    name: "Gonzalo Rocha",
+    email: "gonzalo@alem.com",
+    avatarUrl: "/uploads/branding/profile.jpg",
     role: "admin",
+    active: true
+  },
+  {
+    id: "user-seller",
+    name: "Martina López",
+    email: "martina@alem.com",
+    avatarUrl: "https://i.pravatar.cc/150?u=martina",
+    role: "seller",
     active: true
   }
 ];

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { adjustmentsRouter } from "../modules/adjustments/adjustments.routes";
 import { authRouter } from "../modules/auth/auth.routes";
+import { brandingRouter } from "../modules/branding/branding.routes";
 import { categoriesRouter } from "../modules/categories/categories.routes";
 import { locationsRouter } from "../modules/locations/locations.routes";
 import { movementsRouter } from "../modules/movements/movements.routes";
@@ -22,6 +23,7 @@ apiRouter.get("/health", (_req, res) => {
 });
 
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/branding", brandingRouter);
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/adjustments", adjustmentsRouter);
 apiRouter.use("/products", productsRouter);
