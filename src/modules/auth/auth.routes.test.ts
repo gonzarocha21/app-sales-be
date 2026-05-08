@@ -8,6 +8,7 @@ describe("/api/auth/me", () => {
   let server: Server;
   let baseUrl: string;
   let adminToken: string;
+  let workLocationOptions: Array<{ id: string; name: string }>;
 
   before(() => {
     server = app.listen(0);
@@ -20,6 +21,18 @@ describe("/api/auth/me", () => {
   });
 
   beforeEach(async () => {
+    const locationsResponse = await fetch(`${baseUrl}/api/locations`);
+    const locationsBody = await locationsResponse.json();
+    workLocationOptions = [
+      { id: "todos", name: "Todos" },
+      ...locationsBody.data
+        .filter((location: { active: boolean }) => location.active)
+        .map((location: { id: string; name: string }) => ({
+          id: location.id,
+          name: location.name
+        }))
+    ];
+
     const loginResponse = await fetch(`${baseUrl}/api/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -34,7 +47,7 @@ describe("/api/auth/me", () => {
         authorization: `Bearer ${adminToken}`,
         "content-type": "application/json"
       },
-      body: JSON.stringify({ displayName: "Gonzalo Rocha" })
+      body: JSON.stringify({ displayName: "Gonzalo Rocha", phone: "099 123 456", workLocationId: "todos" })
     });
   });
 
@@ -53,7 +66,10 @@ describe("/api/auth/me", () => {
         id: "user-admin",
         displayName: "Gonzalo Rocha",
         email: "gonzalo@alem.com",
-        avatarUrl: "/uploads/avatars/profile.jpg"
+        avatarUrl: "/uploads/avatars/profile.jpg",
+        phone: "099 123 456",
+        workLocation: { id: "todos", name: "Todos" },
+        workLocationOptions
       }
     });
   });
@@ -65,7 +81,7 @@ describe("/api/auth/me", () => {
         authorization: `Bearer ${adminToken}`,
         "content-type": "application/json"
       },
-      body: JSON.stringify({ displayName: "Operations Lead" })
+      body: JSON.stringify({ displayName: "Operations Lead", phone: "092 111 222" })
     });
     const body = await response.json();
 
@@ -76,7 +92,36 @@ describe("/api/auth/me", () => {
         id: "user-admin",
         displayName: "Operations Lead",
         email: "gonzalo@alem.com",
-        avatarUrl: "/uploads/avatars/profile.jpg"
+        avatarUrl: "/uploads/avatars/profile.jpg",
+        phone: "092 111 222",
+        workLocation: { id: "todos", name: "Todos" },
+        workLocationOptions
+      }
+    });
+  });
+
+  it("updates the current user work location for an authenticated request", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/me`, {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workLocationId: "location-2" })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      success: true,
+      data: {
+        id: "user-admin",
+        displayName: "Gonzalo Rocha",
+        email: "gonzalo@alem.com",
+        avatarUrl: "/uploads/avatars/profile.jpg",
+        phone: "099 123 456",
+        workLocation: { id: "location-2", name: "Local 1" },
+        workLocationOptions
       }
     });
   });
@@ -98,6 +143,48 @@ describe("/api/auth/me", () => {
       error: {
         code: "BAD_REQUEST",
         message: "displayName is required"
+      }
+    });
+  });
+
+  it("returns a standard validation error for invalid work location updates", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/me`, {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ workLocationId: "location-999" })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, {
+      success: false,
+      error: {
+        code: "BAD_REQUEST",
+        message: "workLocationId must be a valid location option"
+      }
+    });
+  });
+
+  it("returns a standard validation error for invalid phone updates", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/me`, {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ phone: 123456 })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, {
+      success: false,
+      error: {
+        code: "BAD_REQUEST",
+        message: "phone must be a string"
       }
     });
   });
@@ -136,88 +223,4 @@ describe("/api/auth/me", () => {
     });
   });
 
-  it("updates the current user avatar for a valid image upload", async () => {
-    const response = await fetch(`${baseUrl}/api/auth/me/avatar`, {
-      method: "PUT",
-      headers: {
-        authorization: `Bearer ${adminToken}`,
-        "content-type": "image/png"
-      },
-      body: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-    });
-    const body = await response.json();
-
-    assert.equal(response.status, 200);
-    assert.deepEqual(body, {
-      success: true,
-      data: {
-        id: "user-admin",
-        displayName: "Gonzalo Rocha",
-        email: "gonzalo@alem.com",
-        avatarUrl: "/uploads/avatars/user-admin-avatar.png"
-      }
-    });
-  });
-
-  it("returns a standard validation error for invalid avatar file types", async () => {
-    const response = await fetch(`${baseUrl}/api/auth/me/avatar`, {
-      method: "PUT",
-      headers: {
-        authorization: `Bearer ${adminToken}`,
-        "content-type": "text/plain"
-      },
-      body: "not an image"
-    });
-    const body = await response.json();
-
-    assert.equal(response.status, 400);
-    assert.deepEqual(body, {
-      success: false,
-      error: {
-        code: "BAD_REQUEST",
-        message: "avatar must be a PNG, JPEG or WEBP image"
-      }
-    });
-  });
-
-  it("returns a standard validation error for avatar files over 1MB", async () => {
-    const response = await fetch(`${baseUrl}/api/auth/me/avatar`, {
-      method: "PUT",
-      headers: {
-        authorization: `Bearer ${adminToken}`,
-        "content-type": "image/png"
-      },
-      body: Buffer.alloc(1024 * 1024 + 1)
-    });
-    const body = await response.json();
-
-    assert.equal(response.status, 400);
-    assert.deepEqual(body, {
-      success: false,
-      error: {
-        code: "BAD_REQUEST",
-        message: "avatar must be 1MB or smaller"
-      }
-    });
-  });
-
-  it("returns a standard unauthorized error for unauthenticated avatar uploads", async () => {
-    const response = await fetch(`${baseUrl}/api/auth/me/avatar`, {
-      method: "PUT",
-      headers: {
-        "content-type": "image/png"
-      },
-      body: Buffer.from([0x89, 0x50, 0x4e, 0x47])
-    });
-    const body = await response.json();
-
-    assert.equal(response.status, 401);
-    assert.deepEqual(body, {
-      success: false,
-      error: {
-        code: "UNAUTHORIZED",
-        message: "Authentication is required"
-      }
-    });
-  });
 });

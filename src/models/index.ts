@@ -90,6 +90,8 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string | null;
+  phone?: string;
+  workLocationId?: string;
   role: UserRole;
   active: boolean;
 }

@@ -6,7 +6,9 @@ const mockUsers: User[] = [
     id: "user-admin",
     name: "Gonzalo Rocha",
     email: "gonzalo@alem.com",
-    avatarUrl: "/uploads/branding/profile.jpg",
+    avatarUrl: "/uploads/avatars/profile.jpg",
+    phone: "099 123 456",
+    workLocationId: "todos",
     role: "admin",
     active: true
   },
@@ -15,6 +17,8 @@ const mockUsers: User[] = [
     name: "Martina López",
     email: "martina@alem.com",
     avatarUrl: "https://i.pravatar.cc/150?u=martina",
+    phone: "098 654 321",
+    workLocationId: "location-2",
     role: "seller",
     active: true
   }

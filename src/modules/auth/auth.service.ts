@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "fs";
 import path from "path";
 import { UserRole } from "../../models";
 import { AppError } from "../../utils/AppError";
+import { locationsService } from "../locations/locations.service";
 
 type LoginPayload = {
   username?: string;
@@ -14,6 +15,8 @@ type AuthUser = {
   displayName: string;
   email: string;
   avatarUrl: string | null;
+  phone: string;
+  workLocationId: string;
   role: UserRole;
 };
 
@@ -23,6 +26,8 @@ type HardcodedUser = AuthUser & {
 
 type UpdateCurrentUserProfilePayload = {
   displayName?: unknown;
+  phone?: unknown;
+  workLocationId?: unknown;
 };
 
 type UpdateCurrentUserAvatarPayload = {
@@ -35,6 +40,14 @@ export type CurrentUserProfile = {
   displayName: string;
   email: string;
   avatarUrl: string | null;
+  phone: string;
+  workLocation: WorkLocationOption;
+  workLocationOptions: WorkLocationOption[];
+};
+
+type WorkLocationOption = {
+  id: string;
+  name: string;
 };
 
 const AVATAR_MAX_SIZE_BYTES = 1024 * 1024;
@@ -52,6 +65,8 @@ const hardcodedUsers: HardcodedUser[] = [
     displayName: "Gonzalo Rocha",
     email: "gonzalo@alem.com",
     avatarUrl: "/uploads/avatars/profile.jpg",
+    phone: "099 123 456",
+    workLocationId: "todos",
     password: "admin",
     role: "admin"
   },
@@ -61,6 +76,8 @@ const hardcodedUsers: HardcodedUser[] = [
     displayName: "Martina López",
     email: "martina@alem.com",
     avatarUrl: "https://i.pravatar.cc/150?u=martina",
+    phone: "098 654 321",
+    workLocationId: "location-2",
     password: "seller",
     role: "seller"
   }
@@ -76,16 +93,61 @@ const unauthorizedError = () => {
 
 const buildToken = (user: AuthUser) => `mock-token-${user.role}`;
 
+const getWorkLocationOptions = (): WorkLocationOption[] => [
+  {
+    id: "todos",
+    name: "Todos"
+  },
+  ...locationsService
+    .list()
+    .filter((location) => location.active)
+    .map((location) => ({
+      id: location.id,
+      name: location.name
+    }))
+];
+
+const getWorkLocation = (workLocationId: string) => {
+  const workLocationOptions = getWorkLocationOptions();
+
+  return workLocationOptions.find((option) => option.id === workLocationId) ?? workLocationOptions[0];
+};
+
 const buildProfile = (user: AuthUser): CurrentUserProfile => ({
   id: user.id,
   displayName: user.displayName,
   email: user.email,
-  avatarUrl: user.avatarUrl
+  avatarUrl: user.avatarUrl,
+  phone: user.phone,
+  workLocation: getWorkLocation(user.workLocationId),
+  workLocationOptions: getWorkLocationOptions()
 });
 
 const validateProfileUpdatePayload = (payload: UpdateCurrentUserProfilePayload) => {
-  if (typeof payload.displayName !== "string" || !payload.displayName.trim()) {
+  if (
+    payload.displayName !== undefined &&
+    (typeof payload.displayName !== "string" || !payload.displayName.trim())
+  ) {
     throw new AppError("displayName is required", 400);
+  }
+
+  if (payload.phone !== undefined && typeof payload.phone !== "string") {
+    throw new AppError("phone must be a string", 400);
+  }
+
+  if (payload.workLocationId !== undefined && typeof payload.workLocationId !== "string") {
+    throw new AppError("workLocationId must be a valid location option", 400);
+  }
+
+  if (
+    typeof payload.workLocationId === "string" &&
+    !getWorkLocationOptions().some((option) => option.id === payload.workLocationId)
+  ) {
+    throw new AppError("workLocationId must be a valid location option", 400);
+  }
+
+  if (payload.displayName === undefined && payload.phone === undefined && payload.workLocationId === undefined) {
+    throw new AppError("displayName, phone or workLocationId is required", 400);
   }
 };
 
@@ -103,8 +165,14 @@ const validateAvatarPayload = (payload: UpdateCurrentUserAvatarPayload) => {
   }
 };
 
-const deletePreviousAvatar = (avatarUrl: string | null, nextAvatarUrl: string) => {
+const deletePreviousAvatar = (userId: string, avatarUrl: string | null, nextAvatarUrl: string) => {
   if (!avatarUrl || avatarUrl === nextAvatarUrl || !avatarUrl.startsWith("/uploads/avatars/")) {
+    return;
+  }
+
+  const avatarFileName = path.basename(avatarUrl);
+
+  if (!avatarFileName.startsWith(`${userId}-avatar.`)) {
     return;
   }
 
@@ -138,6 +206,8 @@ export const authService = {
         displayName: authenticatedUser.displayName,
         email: authenticatedUser.email,
         avatarUrl: authenticatedUser.avatarUrl,
+        phone: authenticatedUser.phone,
+        workLocationId: authenticatedUser.workLocationId,
         role: authenticatedUser.role
       },
       token: buildToken(authenticatedUser)
@@ -168,7 +238,18 @@ export const authService = {
     }
 
     const authenticatedUser = currentUser as HardcodedUser;
-    authenticatedUser.displayName = (payload.displayName as string).trim();
+
+    if (payload.displayName !== undefined) {
+      authenticatedUser.displayName = (payload.displayName as string).trim();
+    }
+
+    if (payload.phone !== undefined) {
+      authenticatedUser.phone = (payload.phone as string).trim();
+    }
+
+    if (typeof payload.workLocationId === "string") {
+      authenticatedUser.workLocationId = payload.workLocationId;
+    }
 
     return buildProfile(authenticatedUser);
   },
@@ -189,7 +270,7 @@ export const authService = {
     const avatarUrl = `/uploads/avatars/${fileName}`;
 
     mkdirSync(AVATAR_UPLOAD_DIRECTORY, { recursive: true });
-    deletePreviousAvatar(authenticatedUser.avatarUrl, avatarUrl);
+    deletePreviousAvatar(authenticatedUser.id, authenticatedUser.avatarUrl, avatarUrl);
     writeFileSync(path.join(AVATAR_UPLOAD_DIRECTORY, fileName), payload.buffer as Buffer);
     authenticatedUser.avatarUrl = avatarUrl;
 

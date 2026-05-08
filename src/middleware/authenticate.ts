@@ -1,10 +1,16 @@
 import { Request, RequestHandler } from "express";
 import { UserRole } from "../models";
-import { CurrentUserProfile, authService } from "../modules/auth/auth.service";
+import { authService } from "../modules/auth/auth.service";
 import { AppError } from "../utils/AppError";
 
-export type AuthenticatedUser = CurrentUserProfile & {
+export type AuthenticatedUser = {
+  id: string;
   username: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string | null;
+  phone: string;
+  workLocationId: string;
   role: UserRole;
 };
 
@@ -37,6 +43,8 @@ export const authenticate: RequestHandler = (req, _res, next) => {
       displayName: user.displayName,
       email: user.email,
       avatarUrl: user.avatarUrl,
+      phone: user.phone,
+      workLocationId: user.workLocationId,
       role: user.role
     };
 
