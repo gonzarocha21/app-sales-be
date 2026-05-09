@@ -3,6 +3,7 @@ import { adjustmentsRouter } from "../modules/adjustments/adjustments.routes";
 import { authRouter } from "../modules/auth/auth.routes";
 import { brandingRouter } from "../modules/branding/branding.routes";
 import { categoriesRouter } from "../modules/categories/categories.routes";
+import { employeesRouter } from "../modules/employees/employees.routes";
 import { locationsRouter } from "../modules/locations/locations.routes";
 import { movementsRouter } from "../modules/movements/movements.routes";
 import { productsRouter } from "../modules/products/products.routes";
@@ -24,6 +25,7 @@ apiRouter.get("/health", (_req, res) => {
 
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/branding", brandingRouter);
+apiRouter.use("/employees", employeesRouter);
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/adjustments", adjustmentsRouter);
 apiRouter.use("/products", productsRouter);

@@ -87,11 +87,14 @@ export interface SaleItem {
 
 export interface User {
   id: string;
-  name: string;
+  name?: string;
   email: string;
-  avatarUrl?: string | null;
   phone?: string;
-  workLocationId?: string;
+  profileImageUrl?: string;
+  password: string;
   role: UserRole;
+  associatedLocationId?: string;
   active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

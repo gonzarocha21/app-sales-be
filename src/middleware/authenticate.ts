@@ -9,8 +9,10 @@ export type AuthenticatedUser = {
   displayName: string;
   email: string;
   avatarUrl: string | null;
+  profileImageUrl?: string;
   phone: string;
-  workLocationId: string;
+  workLocationId?: string;
+  associatedLocationId?: string;
   role: UserRole;
 };
 
@@ -42,9 +44,11 @@ export const authenticate: RequestHandler = (req, _res, next) => {
       username: user.username,
       displayName: user.displayName,
       email: user.email,
-      avatarUrl: user.avatarUrl,
+      avatarUrl: user.profileImageUrl ?? null,
+      profileImageUrl: user.profileImageUrl,
       phone: user.phone,
-      workLocationId: user.workLocationId,
+      workLocationId: user.associatedLocationId,
+      associatedLocationId: user.associatedLocationId,
       role: user.role
     };
 

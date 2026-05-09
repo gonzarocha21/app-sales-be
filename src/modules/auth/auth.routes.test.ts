@@ -3,6 +3,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 import { AddressInfo } from "node:net";
 import { Server } from "node:http";
 import { app } from "../../app";
+import { mockAuthUsers } from "../../mocks/authUsers.mock";
 
 describe("/api/auth/me", () => {
   let server: Server;
@@ -14,10 +15,115 @@ describe("/api/auth/me", () => {
     server = app.listen(0);
     const address = server.address() as AddressInfo;
     baseUrl = `http://127.0.0.1:${address.port}`;
+
+    if (!mockAuthUsers.some((user) => user.id === "user-inactive-auth")) {
+      mockAuthUsers.push({
+        id: "user-inactive-auth",
+        username: "inactive",
+        displayName: "Inactive Seller",
+        email: "inactive.auth@example.com",
+        profileImageUrl: "https://example.com/inactive.jpg",
+        phone: "091 222 333",
+        associatedLocationId: "location-3",
+        password: "inactive",
+        role: "seller",
+        active: false,
+        createdAt: "2026-04-28T00:00:00.000Z",
+        updatedAt: "2026-04-28T00:00:00.000Z"
+      });
+    }
   });
 
   after(() => {
     server.close();
+  });
+
+  it("logs in the MVP admin by username", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "admin", password: "admin" })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      success: true,
+      data: {
+        user: {
+          id: "user-admin",
+          username: "admin",
+          email: "gonzalo@alem.com",
+          role: "admin",
+          associatedLocationId: "todos"
+        },
+        token: "mock-token-user-admin"
+      },
+      message: "Login successful"
+    });
+    assert.equal("password" in body.data.user, false);
+  });
+
+  it("logs in an active employee by email", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "martina@alem.com", password: "seller" })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, {
+      success: true,
+      data: {
+        user: {
+          id: "user-seller",
+          username: "seller",
+          email: "martina@alem.com",
+          role: "seller",
+          associatedLocationId: "location-2"
+        },
+        token: "mock-token-user-seller"
+      },
+      message: "Login successful"
+    });
+    assert.equal("password" in body.data.user, false);
+  });
+
+  it("rejects inactive employee login", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "inactive.auth@example.com", password: "inactive" })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.deepEqual(body, {
+      success: false,
+      error: {
+        code: "USER_INACTIVE",
+        message: "User is inactive"
+      }
+    });
+  });
+
+  it("rejects invalid login credentials", async () => {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "martina@alem.com", password: "wrong" })
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 401);
+    assert.deepEqual(body, {
+      success: false,
+      error: {
+        code: "INVALID_CREDENTIALS",
+        message: "Invalid username or password"
+      }
+    });
   });
 
   beforeEach(async () => {

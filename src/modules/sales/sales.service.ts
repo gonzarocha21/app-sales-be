@@ -1,26 +1,11 @@
 import { randomUUID } from "crypto";
 import { PaymentMethod, Sale, SaleItem } from "../../models";
+import { mockSales } from "../../mocks/sales.mock";
 import { AppError } from "../../utils/AppError";
 import { stockLotsService } from "../stock-lots/stockLots.service";
 import { stockMovementsService } from "../stock-movements/stockMovements.service";
 
-const sales: Sale[] = [
-  {
-    id: "sale-1",
-    externalReference: "EXT-001",
-    locationId: "location-1",
-    items: [
-      {
-        productId: "product-1",
-        quantity: 1,
-        unitPrice: 100
-      }
-    ],
-    status: "registered",
-    total: 100,
-    createdAt: "2026-04-27T00:00:00.000Z"
-  }
-];
+const sales = mockSales;
 
 type CreateSalePayload = {
   externalReference?: string;

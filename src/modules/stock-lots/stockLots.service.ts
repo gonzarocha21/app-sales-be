@@ -1,16 +1,9 @@
 import { randomUUID } from "crypto";
 import { StockLot } from "../../models";
+import { mockStockLots } from "../../mocks/stockLots.mock";
 import { AppError } from "../../utils/AppError";
 
-const stockLots: StockLot[] = [
-  {
-    id: "stock-lot-1",
-    productId: "product-1",
-    locationId: "location-1",
-    quantity: 25,
-    expirationDate: "2026-12-31"
-  }
-];
+const stockLots = mockStockLots;
 
 type CreateStockLotPayload = Omit<StockLot, "id">;
 type UpdateStockLotPayload = Partial<Omit<StockLot, "id">>;

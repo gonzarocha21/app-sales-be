@@ -1,12 +1,6 @@
-import { Branding } from "../../models";
+import { BrandingRecord, mockBranding } from "../../mocks/branding.mock";
 
-export type BrandingRecord = Partial<Branding>;
-
-const mockBranding: BrandingRecord = {
-  companyName: "Alem",
-  logoUrl: "/uploads/branding/logo.png",
-  tagline: "- Uruguay -"
-};
+export type { BrandingRecord } from "../../mocks/branding.mock";
 
 export const brandingStorage = {
   get: (): BrandingRecord => mockBranding

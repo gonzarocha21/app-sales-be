@@ -1,5 +1,6 @@
 import { Branding } from "../../models";
-import { BrandingRecord, brandingStorage } from "./branding.storage";
+import { BrandingRecord } from "../../mocks/branding.mock";
+import { brandingStorage } from "./branding.storage";
 
 const normalizeText = (value: string | null | undefined) => value?.trim() ?? "";
 

@@ -1,27 +1,9 @@
 import { randomUUID } from "crypto";
 import { LOCATION_TYPES, Location, LocationType } from "../../models";
+import { mockLocations } from "../../mocks/locations.mock";
 import { AppError } from "../../utils/AppError";
 
-const locations: Location[] = [
-  {
-    id: "location-1",
-    name: "Depósito",
-    type: "warehouse",
-    active: true
-  },
-  {
-    id: "location-2",
-    name: "Local 1",
-    type: "store",
-    active: true
-  },
-  {
-    id: "location-3",
-    name: "Local 2",
-    type: "store",
-    active: true
-  }
-];
+const locations = mockLocations;
 
 type CreateLocationPayload = Pick<Location, "name" | "type">;
 type UpdateLocationPayload = Partial<Omit<Location, "id">>;

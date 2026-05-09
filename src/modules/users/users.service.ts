@@ -1,28 +1,8 @@
 import { USER_ROLES, User, UserRole } from "../../models";
+import { mockUsers } from "../../mocks/users.mock";
 import { AppError } from "../../utils/AppError";
 
-const mockUsers: User[] = [
-  {
-    id: "user-admin",
-    name: "Gonzalo Rocha",
-    email: "gonzalo@alem.com",
-    avatarUrl: "/uploads/avatars/profile.jpg",
-    phone: "099 123 456",
-    workLocationId: "todos",
-    role: "admin",
-    active: true
-  },
-  {
-    id: "user-seller",
-    name: "Martina López",
-    email: "martina@alem.com",
-    avatarUrl: "https://i.pravatar.cc/150?u=martina",
-    phone: "098 654 321",
-    workLocationId: "location-2",
-    role: "seller",
-    active: true
-  }
-];
+type CreateUserPayload = Partial<User> & Pick<User, "email" | "password">;
 
 const validateRole = (role: unknown) => {
   if (role && !USER_ROLES.includes(role as UserRole)) {
@@ -30,17 +10,37 @@ const validateRole = (role: unknown) => {
   }
 };
 
+const validateCreatePayload = (payload: Partial<User>) => {
+  if (!payload.email) {
+    throw new AppError("User email is required", 400);
+  }
+
+  if (!payload.password) {
+    throw new AppError("User password is required", 400);
+  }
+
+  validateRole(payload.role);
+};
+
 export const usersService = {
   list: () => mockUsers,
   create: (payload: Partial<User>): User => {
-    validateRole(payload.role);
+    validateCreatePayload(payload);
+    const validPayload = payload as CreateUserPayload;
+    const now = new Date().toISOString();
 
     return {
       id: "user-new",
-      name: payload.name ?? "New User",
-      email: payload.email ?? "user@example.com",
+      name: validPayload.name,
+      email: validPayload.email,
+      phone: validPayload.phone,
+      profileImageUrl: validPayload.profileImageUrl,
+      password: validPayload.password,
       role: payload.role ?? "seller",
-      active: payload.active ?? true
+      associatedLocationId: validPayload.associatedLocationId,
+      active: validPayload.active ?? true,
+      createdAt: now,
+      updatedAt: now
     };
   },
   getById: (id: string): User => ({

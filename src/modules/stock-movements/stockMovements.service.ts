@@ -1,17 +1,9 @@
 import { randomUUID } from "crypto";
 import { MOVEMENT_TYPES, MovementType, StockMovement } from "../../models";
+import { mockStockMovements } from "../../mocks/stockMovements.mock";
 import { AppError } from "../../utils/AppError";
 
-const stockMovements: StockMovement[] = [
-  {
-    id: "stock-movement-1",
-    productId: "product-1",
-    toLocationId: "location-1",
-    quantity: 10,
-    type: "entry",
-    createdAt: "2026-04-27T00:00:00.000Z"
-  }
-];
+const stockMovements = mockStockMovements;
 
 type CreateStockMovementPayload = Omit<StockMovement, "id" | "createdAt"> & Partial<Pick<StockMovement, "createdAt">>;
 type UpdateStockMovementPayload = Partial<Omit<StockMovement, "id">>;

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "fs";
 import path from "path";
 import { UserRole } from "../../models";
+import { MockAuthUser, mockAuthUsers } from "../../mocks/authUsers.mock";
 import { AppError } from "../../utils/AppError";
 import { locationsService } from "../locations/locations.service";
 
@@ -14,15 +15,21 @@ type AuthUser = {
   username: string;
   displayName: string;
   email: string;
-  avatarUrl: string | null;
+  profileImageUrl?: string;
   phone: string;
-  workLocationId: string;
+  associatedLocationId?: string;
   role: UserRole;
 };
 
-type HardcodedUser = AuthUser & {
-  password: string;
+type LoginResponseUser = {
+  id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  associatedLocationId?: string;
 };
+
+type HardcodedUser = MockAuthUser;
 
 type UpdateCurrentUserProfilePayload = {
   displayName?: unknown;
@@ -58,40 +65,21 @@ const AVATAR_CONTENT_TYPES: Record<string, string> = {
   "image/webp": "webp"
 };
 
-const hardcodedUsers: HardcodedUser[] = [
-  {
-    id: "user-admin",
-    username: "admin",
-    displayName: "Gonzalo Rocha",
-    email: "gonzalo@alem.com",
-    avatarUrl: "/uploads/avatars/profile.jpg",
-    phone: "099 123 456",
-    workLocationId: "todos",
-    password: "admin",
-    role: "admin"
-  },
-  {
-    id: "user-seller",
-    username: "seller",
-    displayName: "Martina López",
-    email: "martina@alem.com",
-    avatarUrl: "https://i.pravatar.cc/150?u=martina",
-    phone: "098 654 321",
-    workLocationId: "location-2",
-    password: "seller",
-    role: "seller"
-  }
-];
+const authUsers = mockAuthUsers;
 
-const invalidCredentialsError = () => {
+const invalidCredentialsError = (): never => {
   throw new AppError("Invalid username or password", 401, "INVALID_CREDENTIALS");
 };
 
-const unauthorizedError = () => {
+const userInactiveError = (): never => {
+  throw new AppError("User is inactive", 403, "USER_INACTIVE");
+};
+
+const unauthorizedError = (): never => {
   throw new AppError("Authentication is required", 401);
 };
 
-const buildToken = (user: AuthUser) => `mock-token-${user.role}`;
+const buildToken = (user: AuthUser) => `mock-token-${user.id}`;
 
 const getWorkLocationOptions = (): WorkLocationOption[] => [
   {
@@ -107,19 +95,19 @@ const getWorkLocationOptions = (): WorkLocationOption[] => [
     }))
 ];
 
-const getWorkLocation = (workLocationId: string) => {
+const getWorkLocation = (associatedLocationId: string | undefined) => {
   const workLocationOptions = getWorkLocationOptions();
 
-  return workLocationOptions.find((option) => option.id === workLocationId) ?? workLocationOptions[0];
+  return workLocationOptions.find((option) => option.id === associatedLocationId) ?? workLocationOptions[0];
 };
 
 const buildProfile = (user: AuthUser): CurrentUserProfile => ({
   id: user.id,
   displayName: user.displayName,
   email: user.email,
-  avatarUrl: user.avatarUrl,
+  avatarUrl: user.profileImageUrl ?? null,
   phone: user.phone,
-  workLocation: getWorkLocation(user.workLocationId),
+  workLocation: getWorkLocation(user.associatedLocationId),
   workLocationOptions: getWorkLocationOptions()
 });
 
@@ -185,13 +173,20 @@ const deletePreviousAvatar = (userId: string, avatarUrl: string | null, nextAvat
 
 export const authService = {
   login: (payload: LoginPayload) => {
-    if (!payload.username || !payload.password) {
+    const loginUsername = payload.username;
+    const loginPassword = payload.password;
+
+    if (typeof loginUsername !== "string" || !loginUsername.trim() || typeof loginPassword !== "string" || !loginPassword) {
       invalidCredentialsError();
     }
 
-    const user = hardcodedUsers.find(
-      (item) => item.username === payload.username && item.password === payload.password
-    );
+    const username = (loginUsername as string).trim().toLowerCase();
+    const password = loginPassword as string;
+    const user = authUsers.find((item) => {
+      const loginIdentifier = item.role === "admin" ? item.username : item.email;
+
+      return loginIdentifier.toLowerCase() === username && item.password === password;
+    });
 
     if (!user) {
       invalidCredentialsError();
@@ -199,23 +194,26 @@ export const authService = {
 
     const authenticatedUser = user as HardcodedUser;
 
+    if (!authenticatedUser.active) {
+      userInactiveError();
+    }
+
+    const responseUser: LoginResponseUser = {
+      id: authenticatedUser.id,
+      username: authenticatedUser.username,
+      email: authenticatedUser.email,
+      role: authenticatedUser.role,
+      associatedLocationId: authenticatedUser.associatedLocationId
+    };
+
     return {
-      user: {
-        id: authenticatedUser.id,
-        username: authenticatedUser.username,
-        displayName: authenticatedUser.displayName,
-        email: authenticatedUser.email,
-        avatarUrl: authenticatedUser.avatarUrl,
-        phone: authenticatedUser.phone,
-        workLocationId: authenticatedUser.workLocationId,
-        role: authenticatedUser.role
-      },
+      user: responseUser,
       token: buildToken(authenticatedUser)
     };
   },
 
   getUserByToken: (token: string): AuthUser => {
-    const user = hardcodedUsers.find((item) => buildToken(item) === token);
+    const user = authUsers.find((item) => buildToken(item) === token);
 
     if (!user) {
       unauthorizedError();
@@ -231,7 +229,7 @@ export const authService = {
   updateProfile: (user: AuthUser, payload: UpdateCurrentUserProfilePayload): CurrentUserProfile => {
     validateProfileUpdatePayload(payload);
 
-    const currentUser = hardcodedUsers.find((item) => item.id === user.id);
+    const currentUser = authUsers.find((item) => item.id === user.id);
 
     if (!currentUser) {
       unauthorizedError();
@@ -248,7 +246,7 @@ export const authService = {
     }
 
     if (typeof payload.workLocationId === "string") {
-      authenticatedUser.workLocationId = payload.workLocationId;
+      authenticatedUser.associatedLocationId = payload.workLocationId;
     }
 
     return buildProfile(authenticatedUser);
@@ -257,7 +255,7 @@ export const authService = {
   updateAvatar: (user: AuthUser, payload: UpdateCurrentUserAvatarPayload): CurrentUserProfile => {
     validateAvatarPayload(payload);
 
-    const currentUser = hardcodedUsers.find((item) => item.id === user.id);
+    const currentUser = authUsers.find((item) => item.id === user.id);
 
     if (!currentUser) {
       unauthorizedError();
@@ -270,9 +268,9 @@ export const authService = {
     const avatarUrl = `/uploads/avatars/${fileName}`;
 
     mkdirSync(AVATAR_UPLOAD_DIRECTORY, { recursive: true });
-    deletePreviousAvatar(authenticatedUser.id, authenticatedUser.avatarUrl, avatarUrl);
+    deletePreviousAvatar(authenticatedUser.id, authenticatedUser.profileImageUrl ?? null, avatarUrl);
     writeFileSync(path.join(AVATAR_UPLOAD_DIRECTORY, fileName), payload.buffer as Buffer);
-    authenticatedUser.avatarUrl = avatarUrl;
+    authenticatedUser.profileImageUrl = avatarUrl;
 
     return buildProfile(authenticatedUser);
   }

@@ -1,12 +1,10 @@
 import { AppSettings, LANGUAGES } from "../../models";
+import { mockSettings } from "../../mocks/settings.mock";
 import { AppError } from "../../utils/AppError";
 
 type UpdateSettingsPayload = Partial<AppSettings>;
 
-const settings: AppSettings = {
-  lowStockThreshold: 1,
-  language: "en"
-};
+const settings = mockSettings;
 
 const validateSettingsPayload = (payload: UpdateSettingsPayload) => {
   if (

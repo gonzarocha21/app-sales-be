@@ -1,16 +1,6 @@
-type Category = {
-  id: string;
-  name: string;
-  active: boolean;
-};
+import { MockCategory, mockCategories } from "../../mocks/categories.mock";
 
-const mockCategories: Category[] = [
-  {
-    id: "category-1",
-    name: "General",
-    active: true
-  }
-];
+type Category = MockCategory;
 
 export const categoriesService = {
   list: () => mockCategories,
